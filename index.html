@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Interest Pro - Abhishek</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
+    <style>
+        :root {
+            --primary: #4da3ff;
+            --glass-border: rgba(77, 163, 255, 0.3);
+            --bg-dark: #020817;
+            --card-gradient: linear-gradient(180deg, rgba(15, 32, 64, 0.8) 0%, rgba(5, 10, 20, 0.95) 100%);
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', 'Roboto', sans-serif; }
+        
+        body { 
+            background: var(--bg-dark); 
+            color: white; 
+            min-height: 100vh; 
+            overflow-x: hidden; 
+            display: flex; 
+            flex-direction: column; 
+        }
+
+        #bgCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+
+        /* Navbar */
+        .navbar { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 20px 8%; 
+            background: rgba(2, 8, 23, 0.7); 
+            backdrop-filter: blur(15px); 
+            border-bottom: 1px solid rgba(255,255,255,0.05); 
+            position: sticky; top: 0; z-index: 1000; 
+        }
+        
+        .logo { font-weight: bold; font-size: 1.3rem; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
+        .logo span { color: var(--primary); }
+        
+        .nav-links { display: flex; gap: 25px; align-items: center; }
+        .nav-links a { color: #aaa; text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: 0.3s; }
+        .nav-links a:hover { color: white; }
+
+        .login-btn { 
+            background: linear-gradient(90deg, #c09e5d, #f1d592); 
+            color: #111 !important; 
+            padding: 8px 30px; 
+            border-radius: 25px; 
+            font-weight: bold; 
+            box-shadow: 0 4px 15px rgba(192, 158, 93, 0.2);
+        }
+
+        /* Container & Main Card */
+        .container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
+        
+        .main-card { 
+            background: var(--card-gradient); 
+            backdrop-filter: blur(25px); 
+            border-radius: 20px; 
+            border: 1px solid var(--glass-border); 
+            width: 100%; 
+            max-width: 520px; 
+            padding: 45px 35px; 
+            text-align: center; 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(77, 163, 255, 0.05);
+        }
+
+        h2 { font-weight: 400; font-size: 1.3rem; margin-bottom: 30px; letter-spacing: 0.5px; }
+
+        /* Grid & Buttons */
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0; }
+        
+        .btn-ui { 
+            background: rgba(255, 255, 255, 0.04); 
+            border: 1px solid rgba(255,255,255,0.2); 
+            padding: 16px; 
+            border-radius: 40px; 
+            color: #d1d5db; 
+            cursor: pointer; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            font-size: 0.95rem; 
+        }
+
+        .btn-ui:hover { 
+            border-color: var(--primary); 
+            background: rgba(77, 163, 255, 0.12); 
+            color: white;
+            box-shadow: 0 0 15px rgba(77,163,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        .full { grid-column: span 2; }
+        .btn-calc { background: var(--primary); border: none; font-weight: bold; color: #050a14; }
+
+        /* Steps Animation */
+        .step { display: none; }
+        .active { display: block; animation: slideUp 0.5s ease-out; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Bottom Feature Cards */
+        .f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 800px; margin-top: 50px; }
+        .f-card { 
+            background: rgba(15, 23, 42, 0.6); 
+            padding: 25px; 
+            border-radius: 15px; 
+            border: 1px solid rgba(255,255,255,0.05); 
+            text-align: left;
+        }
+        .f-card h4 { color: white; font-size: 1rem; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+        .f-card p { font-size: 0.8rem; color: #94a3b8; line-height: 1.5; }
+
+        input { 
+            width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; 
+            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.4); color: white; outline: none; 
+        }
+        input:focus { border-color: var(--primary); }
+        /* --- Mobile Responsiveness Additions --- */
+
+@media (max-width: 768px) {
+    .navbar {
+        padding: 15px 5%;
+    }
+    .nav-links a:not(.login-btn) {
+        display: none; /* Hide extra links on mobile for clarity */
+    }
+    .container {
+        padding: 20px 15px;
+    }
+    .main-card {
+        padding: 30px 20px;
+        border-radius: 15px; /* Slightly sharper corners for mobile edge-to-edge look */
+    }
+    h2 {
+        font-size: 1.1rem;
+        margin-bottom: 20px;
+    }
+    .f-grid {
+        grid-template-columns: 1fr; /* Stack feature cards vertically */
+        margin-top: 30px;
+    }
+}
+
+@media (max-width: 480px) {
+    .grid {
+        grid-template-columns: 1fr; /* Single column for buttons on small phones */
+        gap: 10px;
+    }
+    .btn-ui {
+        padding: 14px;
+        font-size: 0.9rem;
+    }
+    .logo {
+        font-size: 1.1rem;
+    }
+    .login-btn {
+        padding: 6px 20px;
+        font-size: 0.75rem;
+    }
+    input {
+        padding: 12px;
+        font-size: 16px; /* Prevents iOS zoom-on-focus */
+    }
+}
+
+/* Touch Device Optimization */
+@media (hover: none) {
+    .btn-ui:hover {
+        transform: none; /* Remove hover lift on touch screens */
+    }
+    .btn-ui:active {
+        background: rgba(77, 163, 255, 0.3); /* Clearer tap feedback */
+    }
+}
+    </style>
+</head>
+<body>
+
+<canvas id="bgCanvas"></canvas>
+
+<nav class="navbar">
+    <div class="logo">INTEREST <span>PRO</span></div>
+    <div class="nav-links">
+        <a href="#">FEATURES</a>
+        <a href="#">PRICING</a>
+        <a href="#">ABOUT US</a>
+        <a href="#">CONTACT</a>
+        <a href="#" class="login-btn">LOGIN</a>
+    </div>
+</nav>
+
+<div class="container">
+    <div class="main-card">
+        <div class="step active" id="step1">
+            <h2 id="langH">Select Language / भाषा</h2>
+            <div class="grid">
+                <button class="btn-ui" onclick="setLang('en')">English</button>
+                <button class="btn-ui" onclick="setLang('np')">नेपाली</button>
+                <button class="btn-ui" onclick="setLang('hi')">हिन्दी</button>
+                <button class="btn-ui" onclick="setLang('ma')">मैथिली</button>
+            </div>
+        </div>
+
+        <div class="step" id="step2">
+            <h2 id="menuTitle">Select Mode</h2>
+            <div class="grid">
+                <button class="btn-ui" onclick="setType('si')" id="btnSi">Simple Interest</button>
+                <button class="btn-ui" onclick="setType('ci')" id="btnCi">Compound Interest</button>
+                <button class="btn-ui full" onclick="setType('mi')" id="btnMi">Monthly Interest</button>
+                <button class="btn-ui full" onclick="nav('stepOthers')" id="btnOthers">Other Tools ▾</button>
+            </div>
+            <button onclick="nav('step1')" style="background:none; border:none; color:#64748b; cursor:pointer; margin-top:15px;" id="backL">← Change Language</button>
+        </div>
+
+        <div class="step" id="step3">
+            <h2 id="inputHeader">Enter Details</h2>
+            <div id="pBox"><input type="number" id="p" placeholder="Principal Amount"></div>
+            <div id="rBox"><input type="number" id="r" placeholder="Rate (%)"></div>
+            <div id="tBox">
+                <div class="grid" style="margin:0;">
+                    <input type="number" id="t_y" placeholder="Years">
+                    <input type="number" id="t_m" placeholder="Months">
+                </div>
+            </div>
+            <button onclick="processCalc()" class="btn-ui btn-calc full" id="btnCalc" style="margin-top:20px;">CALCULATE</button>
+            <button onclick="nav('step2')" style="background:none; border:none; color:#64748b; margin-top:15px; cursor:pointer;">Cancel</button>
+        </div>
+
+        <div class="step" id="step4">
+            <div id="resHTML" style="margin-bottom:20px; padding:20px; background:rgba(77,163,255,0.1); border-radius:15px;"></div>
+            <div style="height: 180px;"><canvas id="growthChart"></canvas></div>
+            <button class="btn-ui btn-calc full" onclick="location.reload()" style="margin-top:20px;">RESTART</button>
+        </div>
+    </div>
+
+    <div class="f-grid">
+        <div class="f-card">
+            <h4 id="f1t">📈 Interest Tracking</h4>
+            <p id="f1d">Advanced tracking for your investment growth and history.</p>
+        </div>
+        <div class="f-card">
+            <h4 id="f2t">💎 Investment Growth</h4>
+            <p id="f2d">Monitor wealth with high precision visual charts and data.</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    let lang = 'en';
+    let type = '';
+    let chart = null;
+
+    const dict = {
+        en: { menuTitle: "Select Mode", btnSi: "Simple Interest", btnCi: "Compound Interest", btnMi: "Monthly Interest", btnOthers: "Other Tools ▾" },
+        np: { menuTitle: "मोड छान्नुहोस्", btnSi: "साधारण ब्याज", btnCi: "चक्रीय ब्याज", btnMi: "मासिक ब्याज", btnOthers: "अन्य टुलहरू ▾" },
+        hi: { menuTitle: "मोड चुनें", btnSi: "साधारण ब्याज", btnCi: "चक्रवृद्धि ब्याज", btnMi: "मासिक ब्याज", btnOthers: "अन्य टूल ▾" },
+        ma: { menuTitle: "प्रकार चुनू", btnSi: "साधारण ब्याज", btnCi: "चक्रीय ब्याज", btnMi: "मासिक ब्याज", btnOthers: "दोसर टूल ▾" }
+    };
+
+    function nav(id) {
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function setLang(l) {
+        lang = l;
+        const t = dict[lang];
+        for (let key in t) {
+            let el = document.getElementById(key);
+            if (el) el.innerText = t[key];
+        }
+        nav('step2');
+    }
+
+    function setType(t) { type = t; nav('step3'); }
+
+    function processCalc() {
+        const P = parseFloat(document.getElementById("p").value) || 0;
+        const R = parseFloat(document.getElementById("r").value) || 0;
+        const tY = parseFloat(document.getElementById("t_y").value) || 0;
+        const tM = parseFloat(document.getElementById("t_m").value) || 0;
+        const time = tY + (tM / 12);
+        
+        let interest = (P * R * time) / 100;
+        document.getElementById("resHTML").innerHTML = `<h3>Interest: ${interest.toFixed(2)}</h3><p>Total: ${(P+interest).toFixed(2)}</p>`;
+        nav('step4');
+        updateChart([0, time], [0, interest]);
+    }
+
+    function updateChart(l, d) {
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        if(chart) chart.destroy();
+        chart = new Chart(ctx, {
+            type: 'line',
+            data: { labels: l, datasets: [{ data: d, borderColor: '#4da3ff', fill: true, backgroundColor: 'rgba(77,163,255,0.1)', tension: 0.4 }] },
+            options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
+        });
+    }
+
+    // Particles Background
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 1, 1000);
+    camera.position.z = 100;
+    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("bgCanvas"), antialias: true, alpha: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    const pArray = [];
+    for(let i=0; i<80; i++){
+        const m = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshBasicMaterial({ color: 0x4da3ff, transparent: true, opacity: 0.2 }));
+        m.position.set((Math.random()-0.5)*400, (Math.random()-0.5)*400, (Math.random()-0.5)*400);
+        scene.add(m); pArray.push(m);
+    }
+    function animate() { requestAnimationFrame(animate); pArray.forEach(p => { p.position.y += 0.05; if(p.position.y > 200) p.position.y = -200; }); renderer.render(scene, camera); }
+    animate();
+</script>
+</body>
+</html>
