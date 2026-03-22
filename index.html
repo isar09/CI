@@ -1,320 +1,248 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Interest Pro - Abhishek</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.158/build/three.min.js"></script>
-    <style>
-        :root {
-            --primary: #4da3ff;
-            --glass-border: rgba(77, 163, 255, 0.3);
-            --bg-dark: #020817;
-            --card-gradient: linear-gradient(180deg, rgba(15, 32, 64, 0.8) 0%, rgba(5, 10, 20, 0.95) 100%);
-        }
-
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', 'Roboto', sans-serif; }
-        
-        body { 
-            background: var(--bg-dark); 
-            color: white; 
-            min-height: 100vh; 
-            overflow-x: hidden; 
-            display: flex; 
-            flex-direction: column; 
-        }
-
-        #bgCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
-
-        /* Navbar */
-        .navbar { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center; 
-            padding: 20px 8%; 
-            background: rgba(2, 8, 23, 0.7); 
-            backdrop-filter: blur(15px); 
-            border-bottom: 1px solid rgba(255,255,255,0.05); 
-            position: sticky; top: 0; z-index: 1000; 
-        }
-        
-        .logo { font-weight: bold; font-size: 1.3rem; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; }
-        .logo span { color: var(--primary); }
-        
-        .nav-links { display: flex; gap: 25px; align-items: center; }
-        .nav-links a { color: #aaa; text-decoration: none; font-size: 0.85rem; font-weight: 500; transition: 0.3s; }
-        .nav-links a:hover { color: white; }
-
-        .login-btn { 
-            background: linear-gradient(90deg, #c09e5d, #f1d592); 
-            color: #111 !important; 
-            padding: 8px 30px; 
-            border-radius: 25px; 
-            font-weight: bold; 
-            box-shadow: 0 4px 15px rgba(192, 158, 93, 0.2);
-        }
-
-        /* Container & Main Card */
-        .container { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px 20px; }
-        
-        .main-card { 
-            background: var(--card-gradient); 
-            backdrop-filter: blur(25px); 
-            border-radius: 20px; 
-            border: 1px solid var(--glass-border); 
-            width: 100%; 
-            max-width: 520px; 
-            padding: 45px 35px; 
-            text-align: center; 
-            box-shadow: 0 25px 50px rgba(0,0,0,0.5), inset 0 0 20px rgba(77, 163, 255, 0.05);
-        }
-
-        h2 { font-weight: 400; font-size: 1.3rem; margin-bottom: 30px; letter-spacing: 0.5px; }
-
-        /* Grid & Buttons */
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0; }
-        
-        .btn-ui { 
-            background: rgba(255, 255, 255, 0.04); 
-            border: 1px solid rgba(255,255,255,0.2); 
-            padding: 16px; 
-            border-radius: 40px; 
-            color: #d1d5db; 
-            cursor: pointer; 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
-            font-size: 0.95rem; 
-        }
-
-        .btn-ui:hover { 
-            border-color: var(--primary); 
-            background: rgba(77, 163, 255, 0.12); 
-            color: white;
-            box-shadow: 0 0 15px rgba(77,163,255,0.2);
-            transform: translateY(-2px);
-        }
-
-        .full { grid-column: span 2; }
-        .btn-calc { background: var(--primary); border: none; font-weight: bold; color: #050a14; }
-
-        /* Steps Animation */
-        .step { display: none; }
-        .active { display: block; animation: slideUp 0.5s ease-out; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Bottom Feature Cards */
-        .f-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; max-width: 800px; margin-top: 50px; }
-        .f-card { 
-            background: rgba(15, 23, 42, 0.6); 
-            padding: 25px; 
-            border-radius: 15px; 
-            border: 1px solid rgba(255,255,255,0.05); 
-            text-align: left;
-        }
-        .f-card h4 { color: white; font-size: 1rem; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
-        .f-card p { font-size: 0.8rem; color: #94a3b8; line-height: 1.5; }
-
-        input { 
-            width: 100%; padding: 15px; margin: 10px 0; border-radius: 12px; 
-            border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.4); color: white; outline: none; 
-        }
-        input:focus { border-color: var(--primary); }
-        /* --- Mobile Responsiveness Additions --- */
-
-@media (max-width: 768px) {
-    .navbar {
-        padding: 15px 5%;
-    }
-    .nav-links a:not(.login-btn) {
-        display: none; /* Hide extra links on mobile for clarity */
-    }
-    .container {
-        padding: 20px 15px;
-    }
-    .main-card {
-        padding: 30px 20px;
-        border-radius: 15px; /* Slightly sharper corners for mobile edge-to-edge look */
-    }
-    h2 {
-        font-size: 1.1rem;
-        margin-bottom: 20px;
-    }
-    .f-grid {
-        grid-template-columns: 1fr; /* Stack feature cards vertically */
-        margin-top: 30px;
-    }
-}
-
-@media (max-width: 480px) {
-    .grid {
-        grid-template-columns: 1fr; /* Single column for buttons on small phones */
-        gap: 10px;
-    }
-    .btn-ui {
-        padding: 14px;
-        font-size: 0.9rem;
-    }
-    .logo {
-        font-size: 1.1rem;
-    }
-    .login-btn {
-        padding: 6px 20px;
-        font-size: 0.75rem;
-    }
-    input {
-        padding: 12px;
-        font-size: 16px; /* Prevents iOS zoom-on-focus */
-    }
-}
-
-/* Touch Device Optimization */
-@media (hover: none) {
-    .btn-ui:hover {
-        transform: none; /* Remove hover lift on touch screens */
-    }
-    .btn-ui:active {
-        background: rgba(77, 163, 255, 0.3); /* Clearer tap feedback */
-    }
-}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interest_Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+ <link rel="stylesheet" href="style.css">
+ <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
+ <link rel="shortcut icon" href="logo.png" type="image/x-icon">
+ <link rel="shortcut icon" href="apple-touch-icon.png" type="image/x-icon">
 </head>
 <body>
 
-<canvas id="bgCanvas"></canvas>
+<div class="bg-layer"></div>
+<div class="grid-ovl"></div>
+<canvas id="particleCanvas"></canvas>
+<!-- Floating orbs -->
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
 
+<!-- ══ NAVBAR ══ -->
 <nav class="navbar">
-    <div class="logo">INTEREST <span>PRO</span></div>
-    <div class="nav-links">
-        <a href="#">FEATURES</a>
-        <a href="#">PRICING</a>
-        <a href="#">ABOUT US</a>
-        <a href="#">CONTACT</a>
-        <a href="#" class="login-btn">LOGIN</a>
-    </div>
+  <a href="#" class="logo">
+    <div class="logo-ico">₹</div>
+    <div class="logo-txt">INTEREST <span>A09</span></div>
+  </a>
+
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How It Works</a></li>
+    <li><a href="#languages">Languages</a></li>
+    <li><a href="#histSection" id="navHistory">History</a></li>
+    <li><a href="#" class="nav-cta ripple">Login</a></li>
+  </ul>
+
+  <div class="nav-r">
+    <button class="th-btn" id="thBtn" aria-label="Toggle theme">🌙</button>
+    <button class="ham" id="ham" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </div>
 </nav>
 
-<div class="container">
-    <div class="main-card">
-        <div class="step active" id="step1">
-            <h2 id="langH">Select Language / भाषा</h2>
-            <div class="grid">
-                <button class="btn-ui" onclick="setLang('en')">English</button>
-                <button class="btn-ui" onclick="setLang('np')">नेपाली</button>
-                <button class="btn-ui" onclick="setLang('hi')">हिन्दी</button>
-                <button class="btn-ui" onclick="setLang('ma')">मैथिली</button>
-            </div>
-        </div>
-
-        <div class="step" id="step2">
-            <h2 id="menuTitle">Select Mode</h2>
-            <div class="grid">
-                <button class="btn-ui" onclick="setType('si')" id="btnSi">Simple Interest</button>
-                <button class="btn-ui" onclick="setType('ci')" id="btnCi">Compound Interest</button>
-                <button class="btn-ui full" onclick="setType('mi')" id="btnMi">Monthly Interest</button>
-                <button class="btn-ui full" onclick="nav('stepOthers')" id="btnOthers">Other Tools ▾</button>
-            </div>
-            <button onclick="nav('step1')" style="background:none; border:none; color:#64748b; cursor:pointer; margin-top:15px;" id="backL">← Change Language</button>
-        </div>
-
-        <div class="step" id="step3">
-            <h2 id="inputHeader">Enter Details</h2>
-            <div id="pBox"><input type="number" id="p" placeholder="Principal Amount"></div>
-            <div id="rBox"><input type="number" id="r" placeholder="Rate (%)"></div>
-            <div id="tBox">
-                <div class="grid" style="margin:0;">
-                    <input type="number" id="t_y" placeholder="Years">
-                    <input type="number" id="t_m" placeholder="Months">
-                </div>
-            </div>
-            <button onclick="processCalc()" class="btn-ui btn-calc full" id="btnCalc" style="margin-top:20px;">CALCULATE</button>
-            <button onclick="nav('step2')" style="background:none; border:none; color:#64748b; margin-top:15px; cursor:pointer;">Cancel</button>
-        </div>
-
-        <div class="step" id="step4">
-            <div id="resHTML" style="margin-bottom:20px; padding:20px; background:rgba(77,163,255,0.1); border-radius:15px;"></div>
-            <div style="height: 180px;"><canvas id="growthChart"></canvas></div>
-            <button class="btn-ui btn-calc full" onclick="location.reload()" style="margin-top:20px;">RESTART</button>
-        </div>
-    </div>
-
-    <div class="f-grid">
-        <div class="f-card">
-            <h4 id="f1t">📈 Interest Tracking</h4>
-            <p id="f1d">Advanced tracking for your investment growth and history.</p>
-        </div>
-        <div class="f-card">
-            <h4 id="f2t">💎 Investment Growth</h4>
-            <p id="f2d">Monitor wealth with high precision visual charts and data.</p>
-        </div>
-    </div>
+<!-- Mobile nav -->
+<div class="mob-nav" id="mobNav">
+  <a href="#features" onclick="closeMob()">Features</a>
+  <a href="#how" onclick="closeMob()">How It Works</a>
+  <a href="#languages" onclick="closeMob()">Languages</a>
+  <a href="#" class="m-cta" onclick="closeMob()">Login</a>
 </div>
 
-<script>
-    let lang = 'en';
-    let type = '';
-    let chart = null;
+<!-- ══ HERO ══ -->
+<div class="hero" data-reveal>
+  <div class="hero-badge">Smart Financial Tools</div>
+  <h1>Calculate Interest.<br>Grow Smarter.</h1>
+  <p>Simple, compound, monthly — all in one. Works in English, Nepali, Hindi and Maithili.</p>
+</div>
 
-    const dict = {
-        en: { menuTitle: "Select Mode", btnSi: "Simple Interest", btnCi: "Compound Interest", btnMi: "Monthly Interest", btnOthers: "Other Tools ▾" },
-        np: { menuTitle: "मोड छान्नुहोस्", btnSi: "साधारण ब्याज", btnCi: "चक्रीय ब्याज", btnMi: "मासिक ब्याज", btnOthers: "अन्य टुलहरू ▾" },
-        hi: { menuTitle: "मोड चुनें", btnSi: "साधारण ब्याज", btnCi: "चक्रवृद्धि ब्याज", btnMi: "मासिक ब्याज", btnOthers: "अन्य टूल ▾" },
-        ma: { menuTitle: "प्रकार चुनू", btnSi: "साधारण ब्याज", btnCi: "चक्रीय ब्याज", btnMi: "मासिक ब्याज", btnOthers: "दोसर टूल ▾" }
-    };
+<!-- ══ CALCULATOR ══ -->
+<div class="calc-wrap" data-reveal data-reveal-delay="100">
+  <div class="calc-card">
+    <div class="c-head">
+      <h2 id="stepTitle">Select Language / भाषा</h2>
+      <div class="dots">
+        <div class="dot active" id="d1"></div>
+        <div class="dot" id="d2"></div>
+        <div class="dot" id="d3"></div>
+        <div class="dot" id="d4"></div>
+      </div>
+    </div>
+    <div class="c-body">
 
-    function nav(id) {
-        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-    }
+      <!-- S1: LANGUAGE -->
+      <div class="step active" id="step1">
+        <div class="lang-grid">
+          <button class="lang-btn" onclick="setLang('en')">🇬🇧 English</button>
+          <button class="lang-btn" onclick="setLang('np')">🇳🇵 नेपाली</button>
+          <button class="lang-btn" onclick="setLang('hi')">🇮🇳 हिन्दी</button>
+          <button class="lang-btn" onclick="setLang('ma')">📜 मैथिली</button>
+        </div>
+      </div>
 
-    function setLang(l) {
-        lang = l;
-        const t = dict[lang];
-        for (let key in t) {
-            let el = document.getElementById(key);
-            if (el) el.innerText = t[key];
-        }
-        nav('step2');
-    }
+      <!-- S2: MODE -->
+      <div class="step" id="step2">
+        <div class="mode-grid">
+          <button class="mode-btn" onclick="setType('si')"><span class="ico">📊</span><span id="btnSi">Simple Interest</span></button>
+          <button class="mode-btn" onclick="setType('ci')"><span class="ico">📈</span><span id="btnCi">Compound Interest</span></button>
+          <button class="mode-btn" onclick="setType('mi')"><span class="ico">🗓️</span><span id="btnMi">Monthly Interest</span></button>
+          <button class="mode-btn" onclick="setType('emi')"><span class="ico">🏠</span><span id="btnEmi">EMI Calculator</span></button>
+          <button class="mode-btn full" onclick="nav('stepOthers')"><span class="ico">⚙️</span><span id="btnOthers">Other Tools</span></button>
+        </div>
+        <button class="btn-back" onclick="nav('step1')">← <span id="backL">Change Language</span></button>
+      </div>
 
-    function setType(t) { type = t; nav('step3'); }
+      <!-- S3: INPUT -->
+      <div class="step" id="step3">
+        <div class="ig" id="pBox">
+          <label id="labelP">Principal Amount</label>
+          <input type="number" id="p" placeholder="e.g. 100000" inputmode="decimal">
+        </div>
+        <div class="ig" id="rBox">
+          <label id="labelR">Annual Rate (%)</label>
+          <input type="number" id="r" placeholder="e.g. 12" inputmode="decimal">
+        </div>
+        <div class="ig" id="tBox">
+          <label id="labelT">Time Period</label>
+          <div class="t-row">
+            <input type="number" id="t_y" placeholder="Years" inputmode="numeric">
+            <input type="number" id="t_m" placeholder="Months" inputmode="numeric">
+          </div>
+        </div>
+        <div class="ig" id="nBox" style="display:none">
+          <label id="labelN">Compounding Frequency</label>
+          <div class="freq-grid">
+            <button type="button" class="freq-btn active" data-n="1"  id="freqYr">Yearly</button>
+            <button type="button" class="freq-btn"        data-n="2"  id="freqHy">Half-Yearly</button>
+            <button type="button" class="freq-btn"        data-n="4"  id="freqQt">Quarterly</button>
+            <button type="button" class="freq-btn"        data-n="12" id="freqMo">Monthly</button>
+          </div>
+          <input type="hidden" id="n" value="1">
 
-    function processCalc() {
-        const P = parseFloat(document.getElementById("p").value) || 0;
-        const R = parseFloat(document.getElementById("r").value) || 0;
-        const tY = parseFloat(document.getElementById("t_y").value) || 0;
-        const tM = parseFloat(document.getElementById("t_m").value) || 0;
-        const time = tY + (tM / 12);
-        
-        let interest = (P * R * time) / 100;
-        document.getElementById("resHTML").innerHTML = `<h3>Interest: ${interest.toFixed(2)}</h3><p>Total: ${(P+interest).toFixed(2)}</p>`;
-        nav('step4');
-        updateChart([0, time], [0, interest]);
-    }
+        </div>
+        <div class="ig" id="emiBox" style="display:none">
+          <label id="labelEmi">Loan Tenure (Months)</label>
+          <input type="number" id="emi_t" placeholder="e.g. 120" inputmode="numeric">
+        </div>
+        <button class="btn-calc ripple" onclick="processCalc()" id="btnCalc">CALCULATE</button>
+        <button class="btn-back" onclick="nav('step2')">← Back</button>
+      </div>
 
-    function updateChart(l, d) {
-        const ctx = document.getElementById('growthChart').getContext('2d');
-        if(chart) chart.destroy();
-        chart = new Chart(ctx, {
-            type: 'line',
-            data: { labels: l, datasets: [{ data: d, borderColor: '#4da3ff', fill: true, backgroundColor: 'rgba(77,163,255,0.1)', tension: 0.4 }] },
-            options: { maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { display: false }, x: { grid: { display: false } } } }
-        });
-    }
+      <!-- S4: RESULT -->
+      <div class="step" id="step4">
+        <div class="res-box" id="resHTML"></div>
+        <div class="chart-c"><canvas id="growthChart"></canvas></div>
+        <div class="result-actions">
+          <button class="btn-save" onclick="saveToHistory()" id="btnSave">💾 Save</button>
+          <button class="btn-edit" onclick="goEditDetails()">✏️ Edit</button>
+          <button class="btn-restart" onclick="location.reload()">↺ New</button>
+        </div>
+      </div>
 
-    // Particles Background
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 1, 1000);
-    camera.position.z = 100;
-    const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById("bgCanvas"), antialias: true, alpha: true });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    const pArray = [];
-    for(let i=0; i<80; i++){
-        const m = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 8), new THREE.MeshBasicMaterial({ color: 0x4da3ff, transparent: true, opacity: 0.2 }));
-        m.position.set((Math.random()-0.5)*400, (Math.random()-0.5)*400, (Math.random()-0.5)*400);
-        scene.add(m); pArray.push(m);
-    }
-    function animate() { requestAnimationFrame(animate); pArray.forEach(p => { p.position.y += 0.05; if(p.position.y > 200) p.position.y = -200; }); renderer.render(scene, camera); }
-    animate();
-</script>
+      <!-- OTHERS -->
+      <div class="step" id="stepOthers">
+        <div class="tool-list">
+          <div class="tool-item" onclick="setType('fd')">
+            <div class="t-ico">🏦</div>
+            <div><div style="font-weight:600" id="toolFd">FD Calculator</div><div class="t-sub" id="toolFdSub">Fixed Deposit returns</div></div>
+          </div>
+          <div class="tool-item" onclick="setType('rd')">
+            <div class="t-ico">💰</div>
+            <div><div style="font-weight:600" id="toolRd">RD Calculator</div><div class="t-sub" id="toolRdSub">Recurring Deposit</div></div>
+          </div>
+          <div class="tool-item" onclick="setType('inflation')">
+            <div class="t-ico">📉</div>
+            <div><div style="font-weight:600" id="toolInf">Inflation Calculator</div><div class="t-sub" id="toolInfSub">Real value of money</div></div>
+          </div>
+          <div class="tool-item" onclick="setType('rule72')">
+            <div class="t-ico" style="font-size:.72rem;font-weight:800;font-family:var(--font-d)">×2</div>
+            <div><div style="font-weight:600" id="toolR72">Rule of 72</div><div class="t-sub" id="toolR72Sub">Double your investment</div></div>
+          </div>
+        </div>
+        <button class="btn-back" onclick="nav('step2')">← Back</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<!-- ══ HISTORY ══ -->
+<div class="hist-section" id="histSection" style="display:none">
+  <div class="hist-inner">
+    <div class="hist-top">
+      <div class="hist-title-row">
+        <span class="hist-icon">🗂️</span>
+        <h3 class="hist-title" id="histTitle">Calculation History</h3>
+        <span class="hist-count" id="histCount">0</span>
+      </div>
+      <button class="hist-clear-btn" id="histClearAll" onclick="clearAllHistory()">🗑 Clear All</button>
+    </div>
+    <div class="hist-list" id="histList"></div>
+  </div>
+</div>
+
+<!-- ══ STATS ══ -->
+<div class="stats" data-reveal>
+  <div class="stat"><span class="stat-n" data-count="50000" data-suffix="K+">50K+</span><span class="stat-l">Calculations Done</span></div>
+  <div class="stat"><span class="stat-n" data-count="4" data-suffix="">4</span><span class="stat-l">Languages</span></div>
+  <div class="stat"><span class="stat-n" data-count="8" data-suffix="+">8+</span><span class="stat-l">Financial Tools</span></div>
+  <div class="stat"><span class="stat-n" data-count="100" data-suffix="%">100%</span><span class="stat-l">Free to Use</span></div>
+</div>
+
+<!-- ══ FEATURES ══ -->
+<section class="features" id="features" data-reveal>
+  <div class="sec-lbl">Why Choose Us</div>
+  <h2 class="sec-ttl">Everything You Need<br>In One Place</h2>
+  <div class="feat-grid">
+    <div class="f-card" data-stagger="0"><div class="f-ico">📊</div><h3>Multiple Interest Types</h3><p>Simple, Compound, Monthly, EMI, FD, RD and more — all in one clean interface.</p></div>
+    <div class="f-card" data-stagger="1"><div class="f-ico">🌐</div><h3>Multilingual Support</h3><p>Fully works in English, Nepali, Hindi and Maithili. Designed for South Asian users.</p></div>
+    <div class="f-card" data-stagger="2"><div class="f-ico">📈</div><h3>Visual Growth Charts</h3><p>See your investment grow visually with clean, animated Chart.js graphs.</p></div>
+    <div class="f-card" data-stagger="3"><div class="f-ico">⚡</div><h3>Instant Results</h3><p>No sign-up needed. Enter numbers and get precise results immediately.</p></div>
+    <div class="f-card" data-stagger="4"><div class="f-ico">📱</div><h3>Fully Responsive</h3><p>Works perfectly on any screen — phone, tablet, or desktop. Touch-optimized.</p></div>
+    <div class="f-card" data-stagger="5"><div class="f-ico">🔒</div><h3>Private & Secure</h3><p>All calculations happen in your browser. No data sent to any server.</p></div>
+  </div>
+</section>
+
+<!-- ══ HOW IT WORKS ══ -->
+<section class="how" id="how">
+  <div class="sec-lbl">Process</div>
+  <h2 class="sec-ttl">How It Works</h2>
+  <div class="timeline">
+    <div class="tl-step"><div class="st-num">1</div><div class="st-info"><h4>Choose Your Language</h4><p>Select English, Nepali, Hindi, or Maithili. The interface instantly translates.</p></div></div>
+    <div class="tl-step"><div class="st-num">2</div><div class="st-info"><h4>Pick a Calculator Mode</h4><p>Choose from Simple, Compound, Monthly, EMI, FD, RD, or Inflation Calculator.</p></div></div>
+    <div class="tl-step"><div class="st-num">3</div><div class="st-info"><h4>Enter Your Numbers</h4><p>Input principal, rate, and time. The form adapts to the mode you selected.</p></div></div>
+    <div class="tl-step"><div class="st-num">4</div><div class="st-info"><h4>View Detailed Results</h4><p>See interest earned, total amount, and a visual growth chart — instantly.</p></div></div>
+  </div>
+</section>
+
+<!-- ══ LANGUAGES ══ -->
+<section class="langs-sec" id="languages" data-reveal>
+  <div class="sec-lbl">Multilingual</div>
+  <h2 class="sec-ttl" style="font-size:clamp(1.45rem,3.5vw,2.1rem)">Available In Your Language</h2>
+  <div class="chips">
+    <div class="chip">🇬🇧 English</div>
+    <div class="chip">🇳🇵 नेपाली</div>
+    <div class="chip">🇮🇳 हिन्दी</div>
+    <div class="chip">📜 मैथिली</div>
+  </div>
+</section>
+
+<!-- ══ FOOTER ══ -->
+<footer class="footer">
+  <div class="f-logo">INTEREST <span>A09</span></div>
+  <div class="f-copy">© BS_2082 Interest  by Abhishek_A09. All rights reserved.</div>
+  <div class="f-links">
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Contact</a>
+  </div>
+</footer>
+
+ <script src="main.js"></script>
 </body>
 </html>
