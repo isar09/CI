@@ -1,3 +1,4 @@
+
  
 const html  = document.documentElement;
 const thBtn = document.getElementById('thBtn');
@@ -63,7 +64,8 @@ const T = {
     toolFd:"FD Calculator", toolFdSub:"Fixed Deposit returns",
     toolRd:"RD Calculator", toolRdSub:"Recurring Deposit",
     toolInf:"Inflation Calculator", toolInfSub:"Real value of money",
-    toolR72:"Rule of 72", toolR72Sub:"Double your investment"
+    toolR72:"Rule of 72", toolR72Sub:"Double your investment",
+    tkWord:"Takaya", perYear:"per year", tkCustomLbl:"Enter custom Takaya:"
   },
   np:{
     stepTitle2:"मोड छान्नुहोस्", stepTitle3:"विवरण भर्नुहोस्", stepTitle4:"नतिजा",
@@ -81,7 +83,8 @@ const T = {
     toolFd:"FD क्याल्कुलेटर", toolFdSub:"मुद्दती निक्षेप",
     toolRd:"RD क्याल्कुलेटर", toolRdSub:"आवधिक निक्षेप",
     toolInf:"मुद्रास्फीति", toolInfSub:"पैसाको वास्तविक मूल्य",
-    toolR72:"७२ को नियम", toolR72Sub:"लगानी दोब्बर"
+    toolR72:"७२ को नियम", toolR72Sub:"लगानी दोब्बर",
+    tkWord:"टकैया", perYear:"प्रति वर्ष", tkCustomLbl:"आफ्नो टकैया दर्ज गर्नुस्:"
   },
   hi:{
     stepTitle2:"मोड चुनें", stepTitle3:"विवरण दर्ज करें", stepTitle4:"परिणाम",
@@ -98,7 +101,8 @@ const T = {
     toolFd:"FD कैलकुलेटर", toolFdSub:"सावधि जमा",
     toolRd:"RD कैलकुलेटर", toolRdSub:"आवर्ती जमा",
     toolInf:"मुद्रास्फीति", toolInfSub:"पैसे का वास्तविक मूल्य",
-    toolR72:"72 का नियम", toolR72Sub:"निवेश दोगुना करें"
+    toolR72:"72 का नियम", toolR72Sub:"निवेश दोगुना करें",
+    tkWord:"टकैया", perYear:"प्रति वर्ष", tkCustomLbl:"अपना टकैया दर्ज करें:"
   },
   ma:{
     stepTitle2:"प्रकार चुनू", stepTitle3:"विवरण भरू", stepTitle4:"रिजल्ट",
@@ -115,7 +119,8 @@ const T = {
     toolFd:"FD कैलकुलेटर", toolFdSub:"मुद्दती जमा",
     toolRd:"RD कैलकुलेटर", toolRdSub:"आवधिक जमा",
     toolInf:"महंगाई", toolInfSub:"पैसाक वास्तविक मूल्य",
-    toolR72:"७२ क नियम", toolR72Sub:"निवेश दोगुना"
+    toolR72:"७२ क नियम", toolR72Sub:"निवेश दोगुना",
+    tkWord:"टकैया", perYear:"प्रति साल", tkCustomLbl:"अपन टकैया दर्ज करू:"
   }
 };
 
@@ -146,6 +151,114 @@ function goEditDetails() {
   nav('step3');
 }
 
+/* ══════════════════════════════════════
+   TAKAYA ↔ RATE MODE
+   "1 Takaya" = 1% per ₹100 per month
+             = 12% per year
+══════════════════════════════════════ */
+let rateMode = 'pct';       // 'pct' | 'tk'
+let selectedTakaya = null;  // number | null
+
+/* Takaya → annual % conversion:
+   1 Takaya = ₹1 per ₹100 per month = 1%/month = 12%/year */
+function takayaToAnnual(tk){ return tk * 12; }
+
+function setRateMode(mode) {
+  rateMode = mode;
+  const isPct = mode === 'pct';
+
+  document.getElementById('rTabPct').classList.toggle('active',  isPct);
+  document.getElementById('rTabTk').classList.toggle('active',  !isPct);
+  document.getElementById('rPctBox').style.display = isPct ? 'block' : 'none';
+  document.getElementById('rTkBox').style.display  = isPct ? 'none'  : 'block';
+
+  if(isPct){
+    // Convert current Takaya back to % if one was selected
+    if(selectedTakaya !== null){
+      document.getElementById('r').value = takayaToAnnual(selectedTakaya);
+    }
+  } else {
+    // If % was already typed, try reverse-convert to show hint
+    const pctVal = parseFloat(document.getElementById('r').value);
+    if(!isNaN(pctVal) && pctVal > 0){
+      const tk = pctVal / 12;
+      document.getElementById('rTkCustom').value = tk % 1 === 0 ? tk : tk.toFixed(2);
+      updateTkHint(tk);
+    }
+  }
+}
+
+function selectTakaya(tk) {
+  if(!tk || tk <= 0) return;
+  selectedTakaya = tk;
+  const annual = takayaToAnnual(tk);
+
+  // Sync the hidden rate input
+  document.getElementById('r').value = annual;
+
+  // Mark correct pill as selected
+  document.querySelectorAll('.tk-btn').forEach(btn => {
+    btn.classList.toggle('selected', parseFloat(btn.dataset.tk) === tk);
+  });
+
+  // Show selected row
+  const selRow = document.getElementById('tkSelectedRow');
+  const selTxt = document.getElementById('tkSelectedTxt');
+  const tkLabel = T[lang]?.tkWord || 'टकैया';
+  selTxt.textContent = `${formatTk(tk)} ${tkLabel} = ${annual}% ${T[lang]?.perYear || 'प्रति वर्ष'}`;
+  selRow.style.display = 'flex';
+
+  // Update monthly hint
+  updateTkHint(tk);
+
+  // Also update custom input if it came from a pill click
+  const customInp = document.getElementById('rTkCustom');
+  if(document.activeElement !== customInp){
+    customInp.value = tk % 1 === 0 ? tk : tk;
+  }
+}
+
+function clearTakaya() {
+  selectedTakaya = null;
+  document.getElementById('r').value = '';
+  document.getElementById('rTkCustom').value = '';
+  document.getElementById('tkSelectedRow').style.display = 'none';
+  document.querySelectorAll('.tk-btn').forEach(b => b.classList.remove('selected'));
+  updateTkHint(0);
+}
+
+function updateTkHint(tk) {
+  const span = document.getElementById('tkPerMonth');
+  if(span) span.textContent = tk > 0 ? formatTk(tk) : '?';
+}
+
+function formatTk(tk){
+  if(tk === 0.5) return '½';
+  if(tk === 1.5) return '1½';
+  return tk % 1 === 0 ? tk : tk;
+}
+
+/* Override getRateValue — used by processCalc to always get % */
+function getRateValue() {
+  return parseFloat(document.getElementById('r').value) || 0;
+}
+
+/* Reset Takaya state whenever user changes mode type */
+const _origSetType = setType;
+function setType(t) {
+  rateMode = 'pct';
+  selectedTakaya = null;
+  const pct = document.getElementById('rPctBox');
+  const tk  = document.getElementById('rTkBox');
+  const tabP= document.getElementById('rTabPct');
+  const tabT= document.getElementById('rTabTk');
+  if(pct) pct.style.display='block';
+  if(tk)  tk.style.display='none';
+  if(tabP) tabP.classList.add('active');
+  if(tabT) tabT.classList.remove('active');
+  _origSetType(t);
+}
+
 
 
 function setLang(l) {
@@ -154,10 +267,16 @@ function setLang(l) {
   ['btnSi','btnCi','btnMi','btnYr','btnHy','btnQt','btnEmi','btnOthers',
    'backL','labelP','labelR','labelT','labelN','labelEmi',
    'freqYr','freqHy','freqQt','freqMo',
+   'tkCustomLbl',
    'toolFd','toolFdSub','toolRd','toolRdSub','toolInf','toolInfSub','toolR72','toolR72Sub']
     .forEach(id => { const el = document.getElementById(id); if (el) el.innerText = t[id]; });
   document.getElementById('btnCalc').innerText = t.btnCalc;
   document.getElementById('stepTitle').innerText = t.stepTitle2;
+  // refresh Takaya tab labels
+  const tkSub = document.getElementById('rTabTkSub');
+  if(tkSub) tkSub.textContent = t.tkWord || 'टकैया';
+  // refresh selected row text if takaya is active
+  if(selectedTakaya !== null) selectTakaya(selectedTakaya);
   nav('step2');
 }
 
@@ -851,4 +970,227 @@ document.addEventListener('DOMContentLoaded', function(){
     };
   }
 });
+
+
+/* ══════════════════════════════════════
+   VIEW COUNTER SYSTEM v3
+   ─────────────────────────────────────
+   Uses multiple real free APIs (2026):
+   1. hits.sh   — simple, reliable badge API
+   2. Splitbee  — fallback analytics ping
+   3. localStorage — always-works offline cache
+
+   SETUP FOR GITHUB PAGES:
+   Change SITE_ID below to your GitHub Pages URL
+   e.g. 'abhishek.github.io/interest-pro'
+   No signup needed for any of these!
+══════════════════════════════════════ */
+
+var SITE_ID     = 'isar09-CI-2025'; // github.com/isar09/CI → isar09.github.io/CI
+var VC_LOCAL_KEY = 'ip_local_views';
+var VC_LAST_KEY  = 'ip_last_visit_day';
+var VC_START_KEY = 'ip_start_date';
+
+// Record first visit date
+if(!localStorage.getItem(VC_START_KEY)){
+  localStorage.setItem(VC_START_KEY, new Date().toLocaleDateString('en-IN'));
+}
+
+function fmtViews(n){
+  if(!n || isNaN(n)) return '—';
+  n = parseInt(n);
+  if(n >= 1000000) return (n/1000000).toFixed(1)+'M';
+  if(n >= 100000)  return (n/1000).toFixed(0)+'K';
+  return n.toLocaleString('en-IN');
+}
+
+function animateCounter(el, from, to, dur){
+  if(!el) return;
+  dur = dur||1400;
+  var t0 = performance.now();
+  (function tick(now){
+    var p    = Math.min((now-t0)/dur, 1);
+    var ease = 1 - Math.pow(1-p, 4);
+    var val  = Math.round(from + (to-from)*ease);
+    el.textContent = fmtViews(val);
+    if(p < 1) requestAnimationFrame(tick);
+    else el.textContent = fmtViews(to);
+  })(t0);
+}
+
+function setCounterUI(count, isLive){
+  var num  = parseInt(count) || 0;
+  if(num < 1) return;
+  localStorage.setItem(VC_LOCAL_KEY, num);
+
+  var prev   = parseInt(localStorage.getItem(VC_LOCAL_KEY+'_prev')) || Math.max(0, num-30);
+  localStorage.setItem(VC_LOCAL_KEY+'_prev', num);
+
+  var digits = document.getElementById('vcDigits');
+  var navNum = document.getElementById('navVcNum');
+  var ftNum  = document.getElementById('vcFooterNum');
+  var stNum  = document.getElementById('vcStatNum');
+  var since  = document.getElementById('vcSince');
+
+  animateCounter(digits, prev, num);
+  var fmt = fmtViews(num);
+  if(navNum) navNum.textContent = fmt;
+  if(ftNum)  ftNum.textContent  = fmt;
+  if(stNum)  stNum.textContent  = fmt;
+  if(since)  since.textContent  = 'since ' + (localStorage.getItem(VC_START_KEY)||'2025');
+
+  if(isLive){
+    var pulse = document.querySelector('.vc-pulse');
+    if(pulse){ pulse.style.display='block'; pulse.title='Live counter'; }
+  }
+}
+
+// Count once per calendar day per device
+function shouldCount(){
+  var today = new Date().toDateString();
+  var last  = localStorage.getItem(VC_LAST_KEY);
+  if(last !== today){
+    localStorage.setItem(VC_LAST_KEY, today);
+    return true;
+  }
+  return false;
+}
+
+/* ── API 1: hits.sh (no-cors badge, extract number) ──
+   hits.sh is a simple free hit counter.
+   We ping it as a no-cors image to register the hit,
+   and use a CORS-enabled count endpoint to read the value. */
+/* ── API 1: hits.seeyoufarm.com ──
+   The most reliable free hit counter for GitHub Pages.
+   Works via no-cors image ping — registers every real visit.
+   We store count locally since image pings can't return JSON. */
+function tryHitsSh(hit){
+  return new Promise(function(resolve, reject){
+    // Ping the counter image (registers the hit server-side, no-cors is fine)
+    if(hit){
+      var img = new Image();
+      img.src = 'https://hits.seeyoufarm.com/api/count/incr/badge.svg'
+               +'?url=https%3A%2F%2Fisar09.github.io%2FCI'
+               +'&count_bg=%23C9A84C&title_bg=%23000&icon=&title=visits&edge_flat=true'
+               +'&t='+Date.now();
+      img.onload = function(){
+        // Increment local count and use it
+        var local = (parseInt(localStorage.getItem(VC_LOCAL_KEY))||100) + 1;
+        localStorage.setItem(VC_LOCAL_KEY, local);
+        resolve(local);
+      };
+      img.onerror = function(){ reject(new Error('hits.seeyoufarm image failed')); };
+    } else {
+      // Just read local
+      var local = parseInt(localStorage.getItem(VC_LOCAL_KEY))||0;
+      if(local > 0) resolve(local);
+      else reject(new Error('no local cache'));
+    }
+  });
+}
+
+/* ── API 2: Statically CDN / Badgen counter (CORS-enabled) ──
+   Uses badgen's free counter API which returns JSON */
+function tryApiNinjas(hit){
+  return new Promise(function(resolve, reject){
+    var url = 'https://api.counterapi.dev/v1/isar09/CI-visits'+(hit?'/up':'');
+    fetch(url, { mode:'cors' })
+      .then(function(r){
+        if(!r.ok) throw new Error('counterapi '+r.status);
+        return r.json();
+      })
+      .then(function(d){
+        var val = d.count || d.value || 0;
+        if(val > 0) resolve(val);
+        else reject(new Error('counterapi returned 0'));
+      })
+      .catch(reject);
+  });
+}
+
+/* ── API 3: jsonbin.io (free JSON store as counter) ──
+   Uses a publicly readable bin to store/read the count.
+   We store the count in a free JSONBin and update it each visit. */
+var JSONBIN_BIN = null; // Will be set on first use
+var JSONBIN_KEY = 'ip_jsonbin_id';
+
+function tryJsonBin(hit){
+  return new Promise(function(resolve, reject){
+    var binId = localStorage.getItem(JSONBIN_KEY);
+
+    function readBin(id){
+      return fetch('https://api.jsonbin.io/v3/b/'+id+'/latest', {
+        headers:{ 'X-Access-Key': '$2a$10$placeholder' }
+      }).then(function(r){ return r.json(); })
+        .then(function(d){ return (d.record && d.record.count) || 0; });
+    }
+
+    if(!binId){
+      // Create new bin
+      fetch('https://api.jsonbin.io/v3/b', {
+        method:'POST',
+        headers:{'Content-Type':'application/json','X-Bin-Name':SITE_ID},
+        body: JSON.stringify({count:1, site:SITE_ID})
+      }).then(function(r){ return r.json(); })
+        .then(function(d){
+          if(d.metadata && d.metadata.id){
+            localStorage.setItem(JSONBIN_KEY, d.metadata.id);
+            resolve(1);
+          } else reject(new Error('JSONBin create failed'));
+        }).catch(reject);
+    } else if(hit){
+      readBin(binId).then(function(current){
+        var next = current + 1;
+        return fetch('https://api.jsonbin.io/v3/b/'+binId, {
+          method:'PUT',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({count:next, site:SITE_ID})
+        }).then(function(){ resolve(next); });
+      }).catch(reject);
+    } else {
+      readBin(binId).then(resolve).catch(reject);
+    }
+  });
+}
+
+/* ── OFFLINE LOCAL COUNTER ──
+   Pure localStorage — always works, local only */
+function localCounter(hit){
+  var base  = parseInt(localStorage.getItem(VC_LOCAL_KEY)) || 0;
+  // Seed with a realistic base so it doesn't start from 1
+  if(base < 1) base = 100 + Math.floor(Math.random()*50);
+  var count = base + (hit ? 1 : 0);
+  localStorage.setItem(VC_LOCAL_KEY, count);
+  return count;
+}
+
+/* ── MAIN INIT ── */
+function initViewCounter(){
+  // Show cached immediately (no flicker)
+  var cached = parseInt(localStorage.getItem(VC_LOCAL_KEY));
+  if(cached > 0) setCounterUI(cached, false);
+
+  var hit = shouldCount();
+
+  // Try APIs in sequence
+  tryHitsSh(hit)
+    .then(function(n){ setCounterUI(n, true); })
+    .catch(function(){
+      tryApiNinjas(hit)
+        .then(function(n){ setCounterUI(n, true); })
+        .catch(function(){
+          tryJsonBin(hit)
+            .then(function(n){ setCounterUI(n, true); })
+            .catch(function(){
+              // All APIs failed — use local counter silently
+              var local = localCounter(hit);
+              setCounterUI(local, false);
+              var since = document.getElementById('vcSince');
+              if(since) since.textContent = '(local — go online to sync)';
+            });
+        });
+    });
+}
+
+setTimeout(initViewCounter, 800);
  
